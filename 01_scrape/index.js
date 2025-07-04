@@ -6,7 +6,6 @@ const path = require('node:path');
 const url = require('node:url');
 
 const puppeteer = require('puppeteer');
-const { exit } = require('node:process');
 
 const sleep = (timeout) => {
   return new Promise((resolve) => {
@@ -438,20 +437,17 @@ class Rctf2Pages {
     await new PageHandler(this, browser, pageUrl).run();
   }
 
-  async visitall(browser) {
+  async run() {
+    const browser = await puppeteer.launch({headless: 'new'});
+
+    this.pushpage(this.origin);
+    this.pushpage(`${this.origin}404`);
+
     while (this.toVisit.length) {
       console.log(this.toVisit.length, 'pending pages');
       await this.poppage(browser);
     }
-  }
 
-  async run() {
-    const browser = await puppeteer.launch({headless: 'new'});
-
-    // this.pushpage(this.origin);
-    this.pushpage(`${this.origin}challs`);
-
-    await this.visitall(browser);
     await this.waitallnav.wait();
 
     console.log('processing files')
