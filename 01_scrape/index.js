@@ -6,6 +6,7 @@ const path = require('node:path');
 const url = require('node:url');
 
 const puppeteer = require('puppeteer');
+const { exit } = require('node:process');
 
 const sleep = (timeout) => {
   return new Promise((resolve) => {
@@ -92,7 +93,7 @@ class PageHandler {
     this.browseCompleted = undefined;
   }
 
-  setHooks(page) {
+  async setHooks(page) {
     // Sometimes static files don't get requestfinished somehow.
     // - If all requests done, timeout 250ms
     // - If only irrelevant files remaining, timeout 10s
@@ -135,6 +136,9 @@ class PageHandler {
     });
 
     page.on('requestfinished', async (request) => {
+      await page.evaluate((tok) => {
+        localStorage.setItem('token', tok);
+      }, this.parent.token);
       const requestUrl = request.url();
       const response = request.response();
       const originRedirect = this.redirectedTargets.get(requestUrl);
@@ -149,28 +153,46 @@ class PageHandler {
       if (originRedirect || requestUrl.startsWith(this.parent.origin)) {
         const status = response.status();
 
+        if (requestUrl.includes('solves') && status != 200) {
+          console.log(requestUrl);
+          assert(false);
+        }
+
         if ((status >= 200 && status < 300) ||
             requestUrl === `${this.parent.origin}404`) {
-          if (requestUrl === `${this.parent.origin}404`) {
-            assert(status === 404);
+          let filepath;
+          let url;
+          if (!originRedirect || requestUrl.startsWith(this.parent.origin)) {
+            url = new URL(requestUrl);
+            filepath = this.parent.urlToPath(`${url.origin}${url.pathname}`);
+          } else {
+            url = new URL(originRedirect);
+            filepath = this.parent.urlToPath(`${url.origin}${url.pathname}`);
           }
 
-          let filepath;
-          if (!originRedirect || requestUrl.startsWith(this.parent.origin)) {
-            filepath = this.parent.urlToPath(requestUrl);
-          } else {
-            filepath = this.parent.urlToPath(originRedirect);
+          if (filepath.includes('api/v1/leaderboard/now')) {
+            filepath += `-${url.searchParams.get("division") || "all"}`
+            filepath += `-${url.searchParams.get("limit")}`
+            filepath += `-${url.searchParams.get("offset")}`
+          }
+          else if (filepath.includes('api/v1/leaderboard/graph')) {
+            filepath += `-${url.searchParams.get("division") || "all"}`
+            filepath += `-${url.searchParams.get("limit")}`
+          }
+
+          if (filepath.includes('?') || filepath.includes('&') || filepath.includes('undefined')) {
+            console.log(filepath);
+            assert(false);
           }
 
           // File extension added because sometimes an URL needs to be both a
           // page and a directory...
           if (!filepath.endsWith('.json') &&
-              response.headers()['content-type'] === 'application/json') {
+              response.headers()['content-type'].includes('application/json')) {
             filepath += '.json';
           }
           if (!filepath.endsWith('.html') && !filepath.includes('?') &&
-              response.headers()['content-type'] ===
-                'text/html; charset=utf-8') {
+              response.headers()['content-type'].includes('text/html')) {
             filepath += '.html';
           }
 
@@ -232,37 +254,53 @@ class PageHandler {
   }
 
   async handleSpecials(page) {
-    const softclick = (handle) => handle.evaluate((el) => el.click());
-
     if (this.pageUrl === `${this.parent.origin}`) {
       // Puppeteer headless don't fetch favicon
       const favicon = await page.$eval('link[rel*=\'icon\']',
           (e) => e.href);
       this.parent.allHandouts.add(favicon);
-    } else if (this.pageUrl === `${this.parent.origin}challenges`) {
-      const chals = await page.$$('.challenge-button');
+    } else if (this.pageUrl == `${this.parent.origin}scores`){
+      const page_buttons = await page.$$('div[class~=\'pagination-item\']');
+      const pages_count_def = await page_buttons[page_buttons.length - 2].evaluate(el => parseInt(el.innerText));
+      const teams_at_least = 100 * pages_count_def
 
-      for (const chal of chals) {
-        // Challenge Tab
-        this.browseCompleted = new HeartBeat();
-        await softclick(chal);
-        await this.browseCompleted.wait();
+      const divisions = await page.$eval('select[name=\'division\']', 
+          (e) => Array.from(e.childNodes).map((x) => x.value) );
+      const page_sizes = await page.$eval('select[name=\'pagesize\']', 
+          (e) => Array.from(e.childNodes).map((x) => parseInt(x.value)) );
+      
+      for (const division of divisions) {
+        for (const size of page_sizes) {
+          const pages_count = teams_at_least / size;
+          for (let page = 0; page < pages_count; ++page) {
+            this.parent.pushpage(`${this.parent.origin}scores?page=${page + 1}&division=${division}&pageSize=${size}`)
+          }
+        }
+      }
+    } else if (this.pageUrl === `${this.parent.origin}challs`) {
+      const frames = await page.$$('.frame');
+      const chal_frames = frames.slice(2);
 
-        const handouts = await page.$$eval('.challenge-files a',
-            (l) => l.map((e) => e.href));
-        for (const handout of handouts) {
-          assert(handout.startsWith(this.parent.origin));
-          this.parent.allHandouts.add(handout);
+      for (const chal_frame of chal_frames) {
+        const title = await chal_frame.evaluate((el) => (el.getElementsByClassName('frame__title')[0].innerText));
+        const solves_pts = (await chal_frame.evaluate((el) => (el.getElementsByClassName('u-text-right')[0].innerText))).split(' / ').map((x) => parseInt(x.split(' ')[0]));
+
+        // FIXME: this is wrong but it works with our deployment lol
+        let chall_id = title.replaceAll('/', '-').replaceAll(' ', '-').replaceAll('!', '');
+        if (!chall_id.includes('AdBlocker') && !chall_id.includes('Painting')) {
+          chall_id = chall_id.toLowerCase();
         }
 
-        // Solves Tab
-        this.browseCompleted = new HeartBeat();
-        await softclick(await page.$('.challenge-solves'));
-        await this.browseCompleted.wait();
+        for (var i = 0; i < solves_pts[0]; i += 10) {
+          this.parent.pushpage(`${this.parent.origin}api/v1/challs/${chall_id}/solves?limit=10&offset=${i}`);
+        }
 
-        await sleep(500);
-        await page.keyboard.press('Escape');
-        await sleep(500);
+        const attachments = await chal_frame.evaluate(
+          (el) => Array.from(el.getElementsByClassName('tag')).map((x) => Array.from(x.getElementsByTagName('a')).map((y) => y.href))
+        );
+        for (const attachment of attachments) {
+          this.parent.allHandouts.add(attachment[0]);
+        }
       }
     }
   }
@@ -280,7 +318,7 @@ class PageHandler {
       maxTotalBufferSize: 200 << 20,
     });
 
-    this.setHooks(page);
+    await this.setHooks(page);
 
     console.log('visiting:', this.pageUrl);
     await page.goto(this.pageUrl);
@@ -314,10 +352,11 @@ class PageHandler {
   }
 }
 
-class Ctfd2Pages {
-  constructor(origin, basepath) {
+class Rctf2Pages {
+  constructor(origin, basepath, token) {
     this.origin = origin;
     this.basepath = basepath;
+    this.token = token;
 
     this.toVisit = [];
     this.visited = new Set();
@@ -328,8 +367,15 @@ class Ctfd2Pages {
   }
 
   urlToPath(requestUrl) {
-    assert(requestUrl.startsWith(this.origin));
-    let filepath = '/' + requestUrl.substring(this.origin.length);
+    let filepath = '/'    
+    if (!requestUrl.startsWith(this.origin)) {
+      console.warn(`${requestUrl} does not start with ${this.origin}!!!!!!!, ghetto-ing`);
+      const parts = requestUrl.split('/');
+      filepath += parts.slice(3).join('/');
+    } else {
+      filepath += requestUrl.substring(this.origin.length);
+    }
+  
     filepath = filepath.replace(/\?d=[0-9a-f]{8}$/, '');
     filepath = filepath.replace(/\?_=[0-9]+$/, '');
     if (filepath.endsWith('/')) {
@@ -392,19 +438,23 @@ class Ctfd2Pages {
     await new PageHandler(this, browser, pageUrl).run();
   }
 
-  async run() {
-    const browser = await puppeteer.launch({headless: 'new'});
-
-    this.pushpage(this.origin);
-    this.pushpage(`${this.origin}404`);
-
+  async visitall(browser) {
     while (this.toVisit.length) {
       console.log(this.toVisit.length, 'pending pages');
       await this.poppage(browser);
     }
+  }
 
+  async run() {
+    const browser = await puppeteer.launch({headless: 'new'});
+
+    // this.pushpage(this.origin);
+    this.pushpage(`${this.origin}challs`);
+
+    await this.visitall(browser);
     await this.waitallnav.wait();
 
+    console.log('processing files')
     for (const handout of this.allHandouts) {
       const filepath = this.urlToPath(handout);
       if (!this.completedDownloads.has(filepath)) {
@@ -421,7 +471,7 @@ class Ctfd2Pages {
 const main = async function() {
   const args = process.argv.slice(2);
 
-  if (args.length !== 2) {
+  if (args.length !== 3) {
     console.error(
         `Usage: ${process.argv[0]} ${process.argv[1]} [origin] [path]`);
     console.error(
@@ -429,11 +479,11 @@ const main = async function() {
     return 1;
   }
 
-  let [origin, basepath] = args;
+  let [origin, basepath, token] = args;
   if (!origin.endsWith('/')) {
     origin += '/';
   }
-  await new Ctfd2Pages(origin, basepath).run();
+  await new Rctf2Pages(origin, basepath, token).run();
 
   return 0;
 };

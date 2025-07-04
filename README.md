@@ -1,12 +1,35 @@
-# ctfd2pages
+# rctf2pages
+
+**Beware, the code is very janky because I hate JS and I don't want to spend any more time on it than the bare minimum. There is a 100% chance it will not work for your deployment without additional changes because, again, I hate JavaScript. You also have to manually patch the JS bundle.**
+
+JS patches:
+- Patch out localStorage.token / localStorage.get('Token').
+- Patch out logout/profile/buttons.
+- Patch out flag submit block.
+- Patch out filters.
+- Patch leaderboard-now:
+```js
+({
+  division: e,
+  limit: t = 100,
+  offset: r = 0
+}) => De('GET', `/leaderboard/now-${e || "all"}-${t}-${r}`, {})
+```
+- Patch leaderboard-graph:
+```js
+({
+  division: e
+}) => De('GET', `/leaderboard/graph-${e || "all"}-10`, {})
+```
+- Remove "Register now" button from the main page.
 
 Links rot, which would be especially sad when you have a beautifully themed
-CTFd website :(. None of the existing CTFd archival technologies archive the
+RCTF website :(. None of the existing RCTF archival technologies archive the
 entire website and keep it browsable; in most cases, they only archive the
 handouts and the challenge descriptions.
 
-This is why we created ctfd2pages. Github Pages can now host a static version
-of a CTFd site long after the CTF event is over.
+This is why we created rctf2pages. Github Pages can now host a static version
+of a RCTF site long after the CTF event is over.
 
 Challenges that need special hosting requirements, such as netcat-based
 challenges, are not in scope of this project, unfortunately. Though I guess
@@ -17,17 +40,12 @@ public releases of challenge source code repositories (if available).
 
 A ~~picture~~ live site is worth a thousand words:
 
-- UIUCTF [2020](https://2020.uiuc.tf/), [2021](https://2021.uiuc.tf/),
-  [2022](https://2022.uiuc.tf/), [2023](https://2023.uiuc.tf/)
-- MapleCTF [2022](https://ctf2022.maplebacon.org/)
-- SekaiCTF [2022](https://2022.ctf.sekai.team/)
-- KITCTFCTF [2022](https://2022.ctf.kitctf.de/) GPNCTF21 [2023](https://gpn21.ctf.kitctf.de/)
-- CSCTF [2024](https://2024.csc.tf/)
+- Malta CTF [Quals 2025](https://quals.2025.ctf.mt/)
 - (Feel free to send us a PR and add yours here)
 
 ## Usage
 
-It's mostly just bash and JavaScript. To install JS dependencies:
+It's mostly just bash, JavaScript and Python. To install JS dependencies:
 
 ```bash
 $ npm install
@@ -51,9 +69,6 @@ Each stage will operate on the git repository, but will not push unless
 otherwise specified. To see what each stage does check `run.sh` for the
 commit title, and `stage.sh` for the executed commands.
 
-Feel free to ask on the [SIGPwny Discord](https://sigpwny.com/discord) if you
-need help or have any questions.
-
 ### GitHub Pages Setup
 
 Follow [GitHub documentation](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site).
@@ -63,6 +78,7 @@ In particular, you need to setup a `CNAME` DNS record on your DNS provider to
 
 ## License
 
+Copyright 2022 es3n1n
 Copyright 2022 SIGPwny  
 Copyright 2022 Google LLC
 

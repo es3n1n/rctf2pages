@@ -1,6 +1,6 @@
-#! /bin/bash
+#!/bin/bash
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 source "$DIR"/../lib.sh
 
-do_stage commit_simple 'Remove search bar in teams & users list'
+do_stage commit_simple 'rctf2pages: fix attachment domains'

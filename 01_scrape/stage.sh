@@ -1,2 +1,2 @@
 cd "$DIR"
-node index.js "$CTFD_URL" "$PAGES_REPO"
+node index.js "$RCTF_URL" "$PAGES_REPO" "$RCTF_TOKEN"

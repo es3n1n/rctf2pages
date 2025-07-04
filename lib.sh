@@ -7,10 +7,11 @@ die() {
 
 verify_env() {
   [[ -z "$PAGES_REPO" ]] && die '$PAGES_REPO not set'
-  [[ -z "$CTFD_URL" ]] && die '$CTFD_URL not set'
+  [[ -z "$RCTF_URL" ]] && die '$RCTF_URL not set'
   [[ -z "$GITHUB_REMOTE" ]] && die '$GITHUB_REMOTE not set'
+  [[ -z "$RCTF_TOKEN" ]] && die '$RCTF_TOKEN not set'
 
-  export PAGES_REPO CTFD_URL GITHUB_REMOTE
+  export PAGES_REPO RCTF_URL GITHUB_REMOTE
   PAGES_REPO="$(realpath "$PAGES_REPO")"
 }
 
