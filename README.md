@@ -76,10 +76,14 @@ In particular, you need to setup a `CNAME` DNS record on your DNS provider to
 `<user>.github.io` or `<organization>.github.io`. You also need to set the
 "Custom domain" setting under GitHub Pages settings for the repository.
 
+### Known issues
+
+- `api/v1/challs/[challenge]/solves?limit=10&offset=10` is not patched to be saved as solves-10-10 (something i will do by the time i will be archiving next rctf)
+
 ## License
 
-Copyright 2022 es3n1n
-Copyright 2022 SIGPwny  
+Copyright 2022 es3n1n \
+Copyright 2022 SIGPwny \ 
 Copyright 2022 Google LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
