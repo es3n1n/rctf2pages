@@ -53,6 +53,7 @@ After all stages (but before pushing), you'd have to patch out a few things manu
 - Patch out logout/profile buttons  in js bundle.
 - Patch out flag submit block  in js bundle.
 - Patch out filters ("show solved" block) in js bundle.
+- Patch out `(N/N solved)` text in categories.
 - Patch leaderboard-now in js bundle:
 ```js
 ({
