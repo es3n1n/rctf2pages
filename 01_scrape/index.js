@@ -7,6 +7,12 @@ const url = require('node:url');
 
 const puppeteer = require('puppeteer');
 
+function splitOnce(str, sep) {
+  const pos = str.indexOf(sep);
+  return pos === -1 ? [str]
+      : [str.slice(0, pos), str.slice(pos + sep.length)];
+}
+
 const sleep = (timeout) => {
   return new Promise((resolve) => {
     setTimeout(resolve, timeout);
@@ -159,24 +165,26 @@ class PageHandler {
 
         if ((status >= 200 && status < 300) ||
             requestUrl === `${this.parent.origin}404`) {
-          let filepath;
           let url;
           if (!originRedirect || requestUrl.startsWith(this.parent.origin)) {
             url = new URL(requestUrl);
-            filepath = this.parent.urlToPath(`${url.origin}${url.pathname}`);
           } else {
             url = new URL(originRedirect);
-            filepath = this.parent.urlToPath(`${url.origin}${url.pathname}`);
           }
+          let filepath = this.parent.urlToPath(`${url.origin}${url.pathname}`);
 
           if (filepath.includes('api/v1/leaderboard/now')) {
             filepath += `-${url.searchParams.get("division") || "all"}`
             filepath += `-${url.searchParams.get("limit")}`
             filepath += `-${url.searchParams.get("offset")}`
-          }
-          else if (filepath.includes('api/v1/leaderboard/graph')) {
+          } else if (filepath.includes('api/v1/leaderboard/graph')) {
             filepath += `-${url.searchParams.get("division") || "all"}`
             filepath += `-${url.searchParams.get("limit")}`
+          } else if (/\/api\/v1\/challs\/([^/]+)\/solves$/.test(filepath)) {
+            filepath += `-${url.searchParams.get("limit") || "0"}`
+            filepath += `-${url.searchParams.get("offset") || "0"}`
+          } else if (filepath.includes('api/v1/challs')) {
+            this.parent.challsResponse = JSON.parse(await response.text());
           }
 
           if (filepath.includes('?') || filepath.includes('&') || filepath.includes('undefined')) {
@@ -263,8 +271,13 @@ class PageHandler {
       const pages_count_def = await page_buttons[page_buttons.length - 2].evaluate(el => parseInt(el.innerText));
       const teams_at_least = 100 * pages_count_def
 
-      const divisions = await page.$eval('select[name=\'division\']', 
-          (e) => Array.from(e.childNodes).map((x) => x.value) );
+      let divisions;
+      try {
+        divisions = await page.$eval('select[name=\'division\']',
+            (e) => Array.from(e.childNodes).map((x) => x.value) );
+      } catch(err) { // no divisions
+        divisions = ['all'];
+      }
       const page_sizes = await page.$eval('select[name=\'pagesize\']', 
           (e) => Array.from(e.childNodes).map((x) => parseInt(x.value)) );
       
@@ -284,14 +297,14 @@ class PageHandler {
         const title = await chal_frame.evaluate((el) => (el.getElementsByClassName('frame__title')[0].innerText));
         const solves_pts = (await chal_frame.evaluate((el) => (el.getElementsByClassName('u-text-right')[0].innerText))).split(' / ').map((x) => parseInt(x.split(' ')[0]));
 
-        // FIXME: this is wrong but it works with our deployment lol
-        let chall_id = title.replaceAll('/', '-').replaceAll(' ', '-').replaceAll('!', '');
-        if (!chall_id.includes('AdBlocker') && !chall_id.includes('Painting')) {
-          chall_id = chall_id.toLowerCase();
+        let [chall_category, chall_name] = splitOnce(title, '/');
+        let challenge = this.parent.resolveChallenge(chall_category, chall_name);
+        if (!challenge) {
+          throw Error(`Unable to resolve ${chall_category}/${chall_name}`);
         }
 
         for (var i = 0; i < solves_pts[0]; i += 10) {
-          this.parent.pushpage(`${this.parent.origin}api/v1/challs/${chall_id}/solves?limit=10&offset=${i}`);
+          this.parent.pushpage(`${this.parent.origin}api/v1/challs/${encodeURIComponent(challenge.id)}/solves?limit=10&offset=${i}`);
         }
 
         const attachments = await chal_frame.evaluate(
@@ -358,11 +371,18 @@ class Rctf2Pages {
     this.token = token;
 
     this.toVisit = [];
+    this.challsResponse = {};
     this.visited = new Set();
     this.completedDownloads = new Set();
     this.completedPaths = new Set();
     this.allHandouts = new Set();
     this.waitallnav = new WaitAll();
+  }
+
+  resolveChallenge(category, name) {
+    return this.challsResponse.data.find(element => {
+      return element.name == name && element.category == category;
+    });
   }
 
   urlToPath(requestUrl) {
@@ -471,7 +491,7 @@ const main = async function() {
     console.error(
         `Usage: ${process.argv[0]} ${process.argv[1]} [origin] [path]`);
     console.error(
-        `Example: ${process.argv[0]} ${process.argv[1]} https://2022.uiuc.tf 2022/`);
+        `Example: ${process.argv[0]} ${process.argv[1]} https://quals.2025.ctf.mt/ 2025/`);
     return 1;
   }
 

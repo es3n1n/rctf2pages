@@ -1,28 +1,5 @@
 # rctf2pages
 
-**Beware, the code is very janky because I hate JS and I don't want to spend any more time on it than the bare minimum. There is a 100% chance it will not work for your deployment without additional changes because, again, I hate JavaScript. You also have to manually patch the JS bundle.**
-
-JS patches:
-- Patch out localStorage.token / localStorage.get('Token').
-- Patch out logout/profile/buttons.
-- Patch out flag submit block.
-- Patch out filters.
-- Patch leaderboard-now:
-```js
-({
-  division: e,
-  limit: t = 100,
-  offset: r = 0
-}) => De('GET', `/leaderboard/now-${e || "all"}-${t}-${r}`, {})
-```
-- Patch leaderboard-graph:
-```js
-({
-  division: e
-}) => De('GET', `/leaderboard/graph-${e || "all"}-10`, {})
-```
-- Remove "Register now" button from the main page.
-
 Links rot, which would be especially sad when you have a beautifully themed
 RCTF website :(. None of the existing RCTF archival technologies archive the
 entire website and keep it browsable; in most cases, they only archive the
@@ -69,16 +46,66 @@ Each stage will operate on the git repository, but will not push unless
 otherwise specified. To see what each stage does check `run.sh` for the
 commit title, and `stage.sh` for the executed commands.
 
+After all stages (but before pushing), you'd have to patch out a few things manually:
+
+- Patch out localStorage.token / localStorage.getItem('Token') in js bundle.
+- Patch out logout/profile buttons  in js bundle.
+- Patch out flag submit block  in js bundle.
+- Patch out filters ("show solved" block) in js bundle.
+- Patch leaderboard-now in js bundle:
+```js
+({
+  division: e,
+  limit: t = 100,
+  offset: r = 0
+}) => De('GET', `/leaderboard/now-${e || "all"}-${t}-${r}`, {})
+```
+- Patch leaderboard-graph in js bundle:
+```js
+({
+  division: e
+}) => De('GET', `/leaderboard/graph-${e || "all"}-10`, {})
+```
+- Patch chall-solves in js bundle:
+```js
+({
+    challId: e,
+    limit: t,
+    offset: r
+}) => Pe("GET", `/challs/${encodeURIComponent(e)}/solves-${t}-${r}`, {})
+```
+- Remove "Register now" button from the main page (this is in config, you'd have to pleace it on every html page).
+- Fix landing page image urls in html config.
+- (optional) Add easter egg in js bundle
+```js
+[ye(Ke(), {
+    className: e.svgBackground
+}), ye("div", {
+    className: e.root,
+    children: ye("span", {
+        children: ["Powered by", " ", ye("s", {
+            children: [ye("a", {
+                href: "https://rctf.redpwn.net/",
+                target: "_blank",
+                rel: "noopener noreferrer",
+                children: "rCTF"
+            })]
+        }), ye("a", {
+            href: "https://github.com/es3n1n/rctf2pages",
+            target: "_blank",
+            rel: "noopener noreferrer",
+            children: " rctf2pages"
+        })]
+    })
+})]
+```
+
 ### GitHub Pages Setup
 
 Follow [GitHub documentation](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site).
 In particular, you need to setup a `CNAME` DNS record on your DNS provider to
 `<user>.github.io` or `<organization>.github.io`. You also need to set the
 "Custom domain" setting under GitHub Pages settings for the repository.
-
-### Known issues
-
-- `api/v1/challs/[challenge]/solves?limit=10&offset=10` is not patched to be saved as solves-10-10 (something i will do by the time i will be archiving next rctf)
 
 ## License
 

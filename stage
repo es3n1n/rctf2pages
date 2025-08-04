@@ -25,5 +25,5 @@ done
 echo 'Required environment variables:'
 echo -e '  $PAGES_REPO\t\tPath to the repository of GitHub Pages (example: ~/rctf-pages)'
 echo -e '  $RCTF_URL\t\tURL of the RCTF website (example: https://rctf.teamctf.com)'
-echo -e '  $RCTF_TOKEN\t\RCTF user token'
+echo -e '  $RCTF_TOKEN\t\tRCTF user token (you can get it from local storage)'
 echo -e '  $GITHUB_REMOTE\tURL of the git remote to push to (exmaple: git@github.com:teamctf/rctf.teamctf.com.git)'
