@@ -53,7 +53,7 @@ After all stages (but before pushing), you'd have to patch out a few things manu
 - Patch out logout/profile buttons  in js bundle.
 - Patch out flag submit block  in js bundle.
 - Patch out filters ("show solved" block) in js bundle.
-- Patch out `(N/N solved)` text in categories.
+- Patch out `category (N/N solved)` text in js bundle.
 - Patch leaderboard-now in js bundle:
 ```js
 ({
@@ -76,7 +76,7 @@ After all stages (but before pushing), you'd have to patch out a few things manu
     offset: r
 }) => Pe("GET", `/challs/${encodeURIComponent(e)}/solves-${t}-${r}`, {})
 ```
-- Remove "Register now" button from the main page (this is in config, you'd have to pleace it on every html page).
+- Remove "Register now" button from the main page (this is in config, you'd have to replace it on every html page).
 - Fix landing page image urls in html config.
 - (optional) Add easter egg in js bundle
 ```js
@@ -112,7 +112,7 @@ In particular, you need to setup a `CNAME` DNS record on your DNS provider to
 ## License
 
 Copyright 2022 es3n1n \
-Copyright 2022 SIGPwny \ 
+Copyright 2022 SIGPwny \
 Copyright 2022 Google LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
