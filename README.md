@@ -1,12 +1,12 @@
 # rctf2pages
 
 Links rot, which would be especially sad when you have a beautifully themed
-RCTF website :(. None of the existing RCTF archival technologies archive the
+rCTF website :(. None of the existing rCTF archival technologies archive the
 entire website and keep it browsable; in most cases, they only archive the
 handouts and the challenge descriptions.
 
 This is why we created rctf2pages. Github Pages can now host a static version
-of a RCTF site long after the CTF event is over.
+of a rCTF site long after the CTF event is over.
 
 Challenges that need special hosting requirements, such as netcat-based
 challenges, are not in scope of this project, unfortunately. Though I guess
@@ -23,10 +23,11 @@ A ~~picture~~ live site is worth a thousand words:
 
 ## Usage
 
-It's mostly just bash, JavaScript and Python. To install JS dependencies:
+It's mostly just bash, JavaScript and Python. To install dependencies:
 
 ```bash
 $ npm install
+$ python3 -m pip install -r requirements.txt
 ```
 
 This tool is separated into many stages, each does a different operation.
@@ -49,58 +50,8 @@ commit title, and `stage.sh` for the executed commands.
 
 After all stages (but before pushing), you'd have to patch out a few things manually:
 
-- Patch out localStorage.token / localStorage.getItem('Token') in js bundle.
-- Patch out logout/profile buttons  in js bundle.
-- Patch out flag submit block  in js bundle.
-- Patch out filters ("show solved" block) in js bundle.
-- Patch out `category (N/N solved)` text in js bundle.
-- Patch leaderboard-now in js bundle:
-```js
-({
-  division: e,
-  limit: t = 100,
-  offset: r = 0
-}) => De('GET', `/leaderboard/now-${e || "all"}-${t}-${r}`, {})
-```
-- Patch leaderboard-graph in js bundle:
-```js
-({
-  division: e
-}) => De('GET', `/leaderboard/graph-${e || "all"}-10`, {})
-```
-- Patch chall-solves in js bundle:
-```js
-({
-    challId: e,
-    limit: t,
-    offset: r
-}) => Pe("GET", `/challs/${encodeURIComponent(e)}/solves-${t}-${r}`, {})
-```
 - Remove "Register now" button from the main page (this is in config, you'd have to replace it on every html page).
 - Fix landing page image urls in html config.
-- (optional) Add easter egg in js bundle
-```js
-[ye(Ke(), {
-    className: e.svgBackground
-}), ye("div", {
-    className: e.root,
-    children: ye("span", {
-        children: ["Powered by", " ", ye("s", {
-            children: [ye("a", {
-                href: "https://rctf.redpwn.net/",
-                target: "_blank",
-                rel: "noopener noreferrer",
-                children: "rCTF"
-            })]
-        }), ye("a", {
-            href: "https://github.com/es3n1n/rctf2pages",
-            target: "_blank",
-            rel: "noopener noreferrer",
-            children: " rctf2pages"
-        })]
-    })
-})]
-```
 
 ### GitHub Pages Setup
 
@@ -111,7 +62,7 @@ In particular, you need to setup a `CNAME` DNS record on your DNS provider to
 
 ## License
 
-Copyright 2022 es3n1n \
+Copyright 2025 es3n1n \
 Copyright 2022 SIGPwny \
 Copyright 2022 Google LLC
 
