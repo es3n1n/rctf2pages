@@ -4,7 +4,6 @@ from json import loads, dumps
 from urllib.parse import urlparse, urlunparse
 
 
-
 def sanitize_name(name: str) -> str:
     for c in ('\\', '/', '%2F', '%5C'):
         name = name.replace(c, '-')

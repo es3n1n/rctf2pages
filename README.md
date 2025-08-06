@@ -50,8 +50,8 @@ commit title, and `stage.sh` for the executed commands.
 
 After all stages (but before pushing), you'd have to patch out a few things manually:
 
-- Remove "Register now" button from the main page (this is in config, you'd have to replace it on every html page).
-- Fix landing page image urls in html config.
+- Change landing page image urls in html config, if you've used direct urls (they would be downloaded too).
+- Everything else should be ✨automatically✨ handled by the 05 and 06 stages.
 
 ### Development Environment
 
