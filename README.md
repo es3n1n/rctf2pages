@@ -53,6 +53,12 @@ After all stages (but before pushing), you'd have to patch out a few things manu
 - Remove "Register now" button from the main page (this is in config, you'd have to replace it on every html page).
 - Fix landing page image urls in html config.
 
+### Development Environment
+
+After you've finished preparing your archived CTF for publication, it never hurts to check how it will actually be displayed to people once you deploy it on GitHub Pages.
+
+To do that, you can use the [`serve.py`](serve.py) Python script, which somewhat emulates the behavior of a GitHub Pages web server. To use it, just invoke it from the CTF directory, and your site will be available at `localhost:8000`.
+
 ### GitHub Pages Setup
 
 Follow [GitHub documentation](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site).
