@@ -268,7 +268,7 @@ class PageHandler {
       this.parent.allHandouts.add(favicon);
     } else if (this.pageUrl == `${this.parent.origin}scores`){
       const page_buttons = await page.$$('div[class~=\'pagination-item\']');
-      const pages_count_def = await page_buttons[page_buttons.length - 2].evaluate(el => parseInt(el.innerText));
+      const pages_count_def = page_buttons.length > 0 ? await page_buttons[page_buttons.length - 2].evaluate(el => parseInt(el.innerText)) : 1;
       const teams_at_least = 100 * pages_count_def
 
       let divisions;

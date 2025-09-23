@@ -17,7 +17,7 @@ public releases of challenge source code repositories (if available).
 
 A ~~picture~~ live site is worth a thousand words:
 
-- Malta CTF [Quals 2025](https://quals.2025.ctf.mt/)
+- Malta CTF [Quals 2025](https://quals.2025.ctf.mt/), [Finals 2025](https://finals.2025.ctf.mt/)
 - idekCTF [2025](https://2025.idek.team/)
 - (Feel free to send us a PR and add yours here)
 
