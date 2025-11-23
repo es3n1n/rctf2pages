@@ -187,7 +187,7 @@ class PageHandler {
             this.parent.challsResponse = JSON.parse(await response.text());
           }
 
-          if (filepath.includes('?') || filepath.includes('&') || filepath.includes('undefined')) {
+          if (filepath.includes('?') || filepath.includes('&') || filepath.endsWith('undefined')) {
             console.log(filepath);
             assert(false);
           }
@@ -341,7 +341,7 @@ class PageHandler {
         (l) => l.map((e) => e.href));
 
     for (let link of links) {
-      if (!link.startsWith(this.parent.origin)) {
+      if (!link.startsWith(this.parent.origin) && link !== `${this.parent.origin}undefined`) {
         continue;
       }
 
