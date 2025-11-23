@@ -341,7 +341,7 @@ class PageHandler {
         (l) => l.map((e) => e.href));
 
     for (let link of links) {
-      if (!link.startsWith(this.parent.origin) && link !== `${this.parent.origin}undefined`) {
+      if (!link.startsWith(this.parent.origin) || link === `${this.parent.origin}undefined`) {
         continue;
       }
 
