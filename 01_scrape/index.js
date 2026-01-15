@@ -338,7 +338,14 @@ class PageHandler {
     await this.setHooks(page);
 
     console.log('visiting:', this.pageUrl);
-    await page.goto(this.pageUrl);
+    for (var attempt = 0; attempt < 5; attempt++) {
+        try {
+            await page.goto(this.pageUrl);
+        } catch (error) {
+            console.log('error:', error);
+        }
+        break;
+    }
 
     await this.browseCompleted.wait();
 
