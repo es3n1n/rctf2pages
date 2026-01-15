@@ -267,10 +267,6 @@ class PageHandler {
           (e) => e.href);
       this.parent.allHandouts.add(favicon);
     } else if (this.pageUrl == `${this.parent.origin}scores`){
-      const page_buttons = await page.$$('div[class~=\'pagination-item\']');
-      const pages_count_def = page_buttons.length > 0 ? await page_buttons[page_buttons.length - 2].evaluate(el => parseInt(el.innerText)) : 1;
-      const teams_at_least = 100 * pages_count_def
-
       let divisions;
       try {
         divisions = await page.$eval('select[name=\'division\']',
@@ -278,15 +274,24 @@ class PageHandler {
       } catch(err) { // no divisions
         divisions = ['all'];
       }
-      const page_sizes = await page.$eval('select[name=\'pagesize\']', 
-          (e) => Array.from(e.childNodes).map((x) => parseInt(x.value)) );
-      
       for (const division of divisions) {
-        for (const size of page_sizes) {
-          const pages_count = teams_at_least / size;
-          for (let page = 0; page < pages_count; ++page) {
-            this.parent.pushpage(`${this.parent.origin}scores?page=${page + 1}&division=${division}&pageSize=${size}`)
-          }
+        this.parent.pushpage(`${this.parent.origin}scores?division=${division}`)
+      }
+    } else if (this.pageUrl.startsWith(`${this.parent.origin}scores?division=`)) {
+      const page_buttons = await page.$$('div[class~=\'pagination-item\']');
+      const pages_count_def = page_buttons.length > 0 ? await page_buttons[page_buttons.length - 2].evaluate(el => parseInt(el.innerText)) : 1;
+      const teams_at_least = 100 * pages_count_def;
+
+      const currentUrl = new url.URL(this.pageUrl);
+      const division = currentUrl.searchParams.get('division');
+
+      const page_sizes = await page.$eval('select[name=\'pagesize\']',
+          (e) => Array.from(e.childNodes).map((x) => parseInt(x.value)) );
+
+      for (const size of page_sizes) {
+        const pages_count = teams_at_least / size;
+        for (let pg = 0; pg < pages_count; ++pg) {
+          this.parent.pushpage(`${this.parent.origin}scores?page=${pg + 1}&division=${division}&pageSize=${size}`)
         }
       }
     } else if (this.pageUrl === `${this.parent.origin}challs`) {
@@ -454,6 +459,10 @@ class Rctf2Pages {
 
   async poppage(browser) {
     const pageUrl = this.toVisit.shift();
+    // we will download uploads separately
+    if (pageUrl.indexOf('/uploads/') !== -1) {
+      return;
+    }
     await new PageHandler(this, browser, pageUrl).run();
   }
 
